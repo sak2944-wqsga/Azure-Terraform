@@ -2,19 +2,19 @@
 
 # 1. Create Resource Group
 # resource "azurerm_resource_group" "rg" {
-#   name     = "myResourceGroup"
+#   name     = "Practice-rg"
 #   location = "East US"
 # }
 
 #
 # 1.Data block: reference an existing resource group
 data "azurerm_resource_group" "rg" {
-  name = "1-1f31e6ca-playground-sandbox"
+  name = "Practice-rg"
 }
 
 # 2.Virtual network using that existing RG
 resource "azurerm_virtual_network" "vnet" {
-  name                = "myVNettt"
+  name                = "cust-vnet"
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
   address_space       = ["10.0.0.0/16"]
@@ -55,6 +55,18 @@ resource "azurerm_network_security_group" "nsg" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+  security_rule {
+    name                       = "Allow-HTTP"
+    priority                   = 110
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
 }
 
 # 6. Associate NSG with Subnet
@@ -79,19 +91,20 @@ resource "azurerm_network_interface" "nic" {
 
 # 8. Create Virtual Machine (VM)
 resource "azurerm_linux_virtual_machine" "vm" {
-  name                = "myVM"
+  name                = "cust-VM"
   resource_group_name = data.azurerm_resource_group.rg.name
-  location            = data.azurerm_resource_group.rg.location
-  size                = "Standard_B1s"
-  admin_username      = "azureuser"
+  location            = "Central India"
+  zone                = "2"
+  size                = "Standard_B2ats_v2"
+  admin_username      = "shubh"
   network_interface_ids = [azurerm_network_interface.nic.id]
 
   disable_password_authentication = false
-  admin_password = "Akki@1212"
+  admin_password = "Sak@11111111"
 
 
 #   admin_ssh_key {
-#     username   = "azureuser"
+#     username   = "shubh"
 #     public_key = file("~/.ssh/id_rsa.pub")  # Path to your SSH public key
 #   }
 
@@ -102,8 +115,30 @@ resource "azurerm_linux_virtual_machine" "vm" {
 
   source_image_reference {
     publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "18.04-LTS"
+    offer     = "ubuntu-24_04-lts"
+    sku       = "server"
     version   = "latest"
   }
+}
+
+resource "null_resource" "nginx_install" {
+  depends_on = [ azurerm_linux_virtual_machine.vm ]
+  connection {
+    type = "ssh"
+    host = azurerm_linux_virtual_machine.vm.public_ip_address
+    user = "shubh"
+    password = "Sak@11111111"
+
+  }
+  provisioner "remote-exec" {
+    inline = [ 
+      "sudo apt-get update -y",
+      "sudo apt-get install -y nginx",
+      "sudo systemctl enable nginx",
+      "sudo systemctl start nginx"
+     ]
+  }
+}
+output "public_ip" {
+  value = azurerm_public_ip.public_ip.ip_address
 }
