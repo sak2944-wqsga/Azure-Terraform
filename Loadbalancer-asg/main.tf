@@ -4,14 +4,14 @@
 
 provider "azurerm" {
   features {}
-  subscription_id = "86199285-19af-4698-a87a-520f86bd0cfd"
+  subscription_id = "f4733f9e-72aa-4d8f-b4bb-22ba87f56d23"
 }
 
 # --------------------
 # Resource Group Lookup
 # --------------------
 data "azurerm_resource_group" "rg" {
-  name = "loadbalencer"
+  name = "Practice-rg"
 }
 
 # --------------------
@@ -67,13 +67,13 @@ resource "azurerm_public_ip" "appgw_pip" {
 # Shared Image Gallery
 # --------------------
 data "azurerm_shared_image_gallery" "sig" {
-  name                = "galary"
-  resource_group_name = "loadbalencer"
+  name                = "cust-gallery"
+  resource_group_name = "Practice-rg"
 }
 
 data "azurerm_shared_image_version" "img" {
   name                = "0.0.1"
-  image_name          = "vsvv"
+  image_name          = "cust-img"
   gallery_name        = data.azurerm_shared_image_gallery.sig.name
   resource_group_name = data.azurerm_shared_image_gallery.sig.resource_group_name
 }
@@ -88,8 +88,8 @@ resource "azurerm_linux_virtual_machine_scale_set" "vmss" {
   sku                 = "Standard_D2ls_v6"
   instances           = 1
 
-  admin_username = "adminuser"
-  admin_password = "Akki@12345678"
+  admin_username = "shubh"
+  admin_password = "Sak@11111111"
   disable_password_authentication = false
 
   source_image_id = data.azurerm_shared_image_version.img.id
@@ -122,7 +122,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "vmss" {
 # Application Gateway (WAF)
 # --------------------
 resource "azurerm_application_gateway" "appgw" {
-  name                = "appgw-veera-tf"
+  name                = "appgw-shubh-tf"
   resource_group_name = data.azurerm_resource_group.rg.name
   location            = data.azurerm_resource_group.rg.location
 
@@ -181,7 +181,7 @@ resource "azurerm_application_gateway" "appgw" {
 # Autoscale
 # --------------------
 resource "azurerm_monitor_autoscale_setting" "autoscale" {
-  name                = "vmss-autoscale-veeraa-tf"
+  name                = "vmss-autoscale-shubh-tf"
   resource_group_name = data.azurerm_resource_group.rg.name
   location            = data.azurerm_resource_group.rg.location
   target_resource_id  = azurerm_linux_virtual_machine_scale_set.vmss.id
